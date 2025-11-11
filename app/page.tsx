@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Database, GitCompare, Package, Shield, Users } from "lucide-react"
+import { Database, FileText, GitCompare, Package, Shield, Users } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useTranslations } from "@/lib/language-context"
 
@@ -74,6 +74,17 @@ export default function Home() {
       href: "/access-rights-comparator",
       color: "text-rose-500",
       bgColor: "bg-rose-500/10",
+    },
+    {
+      title: t("poValidator.title", ".po Validator"),
+      description: t(
+        "poValidator.description",
+        "Upload or paste translation files to detect missing strings and placeholder mismatches.",
+      ),
+      icon: FileText,
+      href: "/po-validator",
+      color: "text-purple-500",
+      bgColor: "bg-purple-500/10",
     },
   ]
 
