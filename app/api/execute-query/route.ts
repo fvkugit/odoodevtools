@@ -120,6 +120,32 @@ def _stringify(value):
         except Exception:
             return "<unrepresentable>"
 
+def _json_escape(value):
+    return (
+        value.replace("\\\\", "\\\\\\\\")
+        .replace('"', '\\"')
+        .replace("\\n", "\\\\n")
+        .replace("\\r", "\\\\r")
+        .replace("\\t", "\\\\t")
+    )
+
+def _to_json(value):
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, (int, float)):
+        return repr(value)
+    if isinstance(value, (list, tuple)):
+        return "[" + ",".join(_to_json(item) for item in value) + "]"
+    if isinstance(value, dict):
+        parts = []
+        for key, val in value.items():
+            parts.append('"' + _json_escape(str(key)) + '":' + _to_json(val))
+        return "{" + ",".join(parts) + "}"
+    stringified = _stringify(value) or ""
+    return '"' + _json_escape(stringified) + '"'
+
 try:
     env.cr.execute("SAVEPOINT %s" % savepoint)
     env.cr.execute(query)
@@ -154,7 +180,7 @@ try:
     else:
         env.cr.execute("ROLLBACK TO SAVEPOINT %s" % savepoint)
         env.cr.execute("RELEASE SAVEPOINT %s" % savepoint)
-    env["ir.config_parameter"].sudo().set_param(result_key, repr(payload))
+    env["ir.config_parameter"].sudo().set_param(result_key, _to_json(payload))
 except Exception as exc:
     try:
         env.cr.execute("ROLLBACK TO SAVEPOINT %s" % savepoint)
@@ -163,7 +189,7 @@ except Exception as exc:
         pass
     env["ir.config_parameter"].sudo().set_param(
         error_key,
-        repr({"query": query, "error": str(exc)}),
+        _to_json({"query": query, "error": str(exc)}),
     )
     raise`
   }
@@ -203,16 +229,8 @@ except Exception as exc:
   }
 
   private parseResult(result: string): QueryResult {
-    // Python repr format - need to parse it
     try {
-      // Replace Python None with null, True/False with true/false
-      const jsonStr = result
-        .replace(/None/g, "null")
-        .replace(/True/g, "true")
-        .replace(/False/g, "false")
-        .replace(/'/g, '"')
-
-      return JSON.parse(jsonStr)
+      return JSON.parse(result)
     } catch {
       throw new Error("Failed to parse query result")
     }
@@ -220,13 +238,7 @@ except Exception as exc:
 
   private formatError(error: string): string {
     try {
-      const jsonStr = error
-        .replace(/None/g, "null")
-        .replace(/True/g, "true")
-        .replace(/False/g, "false")
-        .replace(/'/g, '"')
-
-      const parsed = JSON.parse(jsonStr)
+      const parsed = JSON.parse(error)
       return parsed.error || error
     } catch {
       return error

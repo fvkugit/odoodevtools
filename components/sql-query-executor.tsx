@@ -145,6 +145,11 @@ export function SqlQueryExecutor() {
                   {result.dry_run ? "Simulation" : "Applied"}
                 </Badge>
                 <Badge variant="outline">{result.row_count} rows</Badge>
+                {result.statusmessage && (
+                  <Badge variant="outline" className="font-mono">
+                    {result.statusmessage}
+                  </Badge>
+                )}
               </div>
             </div>
             <CardDescription>
